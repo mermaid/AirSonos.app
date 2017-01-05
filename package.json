@@ -1,0 +1,27 @@
+{
+  "name": "airsonos.app",
+  "version": "0.1.0",
+  "description": "A front end for AirSonos",
+  "main": "index.js",
+  "dependencies": {
+    "airsonos": "^0.2.6",
+    "electron-prebuilt": "^1.4.13"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "test",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "AirSonos.app"
+  },
+  "keywords": [
+    "sonos",
+    "airsonos",
+    "airplay",
+    "apple"
+  ],
+  "author": "Mermaid",
+  "license": "MIT"
+}
