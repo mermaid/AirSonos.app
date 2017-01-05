@@ -4,13 +4,15 @@
   "description": "A front end for AirSonos",
   "main": "index.js",
   "dependencies": {
-    "airsonos": "^0.2.6",
+    "airsonos": "^0.2.6"
+  },
+  "devDependencies": {
     "electron-prebuilt": "^1.4.13"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "test",
-    "start": "electron ."
+    "start": "electron .",
+    "postinstall": "npm rebuild --runtime=electron --target=1.4.13 --disturl=https://atom.io/download/atom-shell --build-from-sourcet"
   },
   "repository": {
     "type": "git",
