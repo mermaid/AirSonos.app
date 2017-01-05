@@ -71,7 +71,7 @@
 
         
         animate();
-        setTimeout(stopAnimation, 5000);
+        setTimeout(stopAnimation, 10000);
     });
 
 
@@ -92,7 +92,7 @@
     function stopAnimation() {
         if(animationInterval) {
             clearInterval(animationInterval);
-            tray.setImage(path.join(__dirname, 'img/logo-iconTemplate.png'));
+            tray.setImage(path.join(__dirname, `img/animations/logo-dim-iconTemplate@2x.png`));
         }            
     }
 
