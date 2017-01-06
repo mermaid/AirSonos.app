@@ -1,0 +1,16 @@
+{
+  "title": "AirSonos",
+  "icon": "img/airsonos-logo.icns",
+  "background": "DMGBackground.png",
+  "window": {
+      "size": {
+          "width": 640,
+          "height": 400
+      }
+  },
+  "icon-size": 192,
+  "contents": [
+    { "x": 428, "y": 200, "type": "link", "path": "/Applications" },
+    { "x": 20, "y": 200, "type": "file", "path": "./dist/AirSonos-darwin-x64/AirSonos.app" }
+  ]
+}
