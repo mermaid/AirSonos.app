@@ -14,10 +14,14 @@ const Config = require('electron-config');
 const config = new Config();
 const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master/package.json';
 
+
 let aboutWindow;
 let updateWindow;
+let menubar;
+
 var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
 process.stdout.write = process.stderr.write = access.write.bind(access);
+
 if (config.get('automatic-updates') === undefined) {
   config.set('automatic-updates', true);
 }
@@ -26,11 +30,13 @@ const airSonosMenu = {
     label: 'AirSonos',
     click: () => {
       if (!aboutWindow) {
+
         aboutWindow = new BrowserWindow({
             height: 220,
             width: 420,
             title: 'AirSonos',
-            // resizable: false,
+            center: true,
+            resizable: false,
             minimizable: false,
             maximizable: false,
         });
@@ -90,7 +96,7 @@ const automaticUpdatesMenu = {
 
 
 app.on('ready', function() {
-  let menubar = new MenuBar();
+  menubar = new MenuBar();
   menubar.animatieIcon();
   menubar.setMenuTemplates(constructMenuTemplates(0));
 
@@ -115,6 +121,10 @@ app.on('ready', function() {
   }).done();
 });
 
+app.on('window-all-closed', function() {
+  //dont quit on windows close
+});
+
 //option: Bool, wether or not to construct the option menubar
 //connected: 0 - connecting, 1 - connected, -1 - failed to connect
 function constructMenuTemplates(connected) {
@@ -124,7 +134,7 @@ function constructMenuTemplates(connected) {
   template.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
   optionTemplate.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
 
-  optionTemplate.concat([separatorMenu, rebootMenu, forceQuitMenu]);
+  optionTemplate = optionTemplate.concat([separatorMenu, rebootMenu, forceQuitMenu]);
   template.push(quitMenu);
 
   return [template, optionTemplate];
@@ -140,6 +150,7 @@ if (config.get('automatic-updates')) {
             height: 220,
             width: 420,
             title: 'AirSonos',
+            center: true,
             resizable: false,
             minimizable: false,
             maximizable: false,
