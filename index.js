@@ -1,100 +1,159 @@
-(function() {
-    'use strict';
 
-    console.log(process.version);
+'use strict';
 
-    const {app, BrowserWindow, Tray, Menu} = require('electron');
-    const path = require('path');
-    const AirSonos = require('airsonos');
-    // const ipc = require('ipc');
+const {app, BrowserWindow} = require('electron');
+app.dock.hide();
 
-    var mainWindow = null;
+const AirSonos = require('airsonos');
+const MenuBar = require('./menubar');
+const path = require('path');
+const fs = require('fs');
+const request = require('request-promise');
+const cmp = require('semver-compare');
+const Config = require('electron-config');
+const config = new Config();
+const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master/package.json';
 
-    let animationInterval;
-    let tray = null;
+let aboutWindow;
+let updateWindow;
+// var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
+// process.stdout.write = process.stderr.write = access.write.bind(access);
+if (config.get('automatic-updates') === undefined) {
+  config.set('automatic-updates', true);
+}
 
-    app.on('ready', function() {
-        // mainWindow = new BrowserWindow({
-        //     height: 600,
-        //     width: 800
-        // });
-
-        // console.log('dirname');
-
-        // mainWindow.loadURL(`file://${__dirname }/app/index.html`);
-
-
-        if (process.platform === 'darwin') {
-            tray = new Tray(path.join(__dirname, 'img/logo-iconTemplate.png'));
-        }
-        else {
-            tray = new Tray(path.join(__dirname, 'img/tray-icon-alt.png'));
-        }
-
-        var trayMenuTemplate = [
-            {
-                label: 'AirSonos',
-                enabled: false
-            },
-            {
-                label: 'Settings',
-                // click: function () {
-                    // ipc.send('open-settings-window');
-                // },
-                type: 'radio'
-            },
-            {
-                label: 'Quit',
-                click: function () {
-                    app.quit();
-                }
-            }
-        ];
-        var trayMenu = Menu.buildFromTemplate(trayMenuTemplate);
-        tray.setToolTip('AirSonos');
-        tray.setContextMenu(trayMenu);
-
-        console.log('Searching for Sonos devices on network...\n');
-
-        let instance = new AirSonos({
-            timeout: 5,
+const airSonosMenu = {
+    label: 'AirSonos',
+    click: () => {
+      if (!aboutWindow) {
+        aboutWindow = new BrowserWindow({
+            height: 220,
+            width: 420,
+            title: 'AirSonos',
+            // resizable: false,
+            minimizable: false,
+            maximizable: false,
         });
 
-        instance.start().then((tunnels) => {
+        aboutWindow.on('closed', () => {
+          aboutWindow = null
+        });
 
-            tunnels.forEach((tunnel) => {
-            console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
-            });
+        aboutWindow.loadURL(`file://${__dirname }/app/about.html`);
+      } else {
+        aboutWindow.show();
+      }
+    }
+};
+const quitMenu = {
+    label: 'Quit',
+    click: () => {
+        app.quit();
+    }
+};
+const forceQuitMenu = {
+    label: 'Force Quit',
+    click: () => {
+        app.exit(0);
+    }
+};
+const rebootMenu = {
+    label: 'Restart',
+    click: () => {                        
+        app.relaunch();
+        app.quit();
+    }
+};
+const separatorMenu = {
+    type: 'separator'
+};
+const connectedMenu = {
+    label: 'Connected',
+    enabled: false
+};
+const connectingMenu = {
+    label: 'Connecting...',
+    enabled: false
+};
+const failedToConnectMenu = {
+    label: 'Failed to Connect',
+    enabled: false
+};
+const automaticUpdatesMenu = {
+  label: 'Check for Updates',
+  type: 'checkbox',
+  click: () => {
+    config.set('automatic-updates', !config.get('automatic-updates'));
+  },
+  checked: config.get('automatic-updates')
+}
 
-            console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
-        }).done();
 
-        
-        animate();
-        setTimeout(stopAnimation, 10000);
+app.on('ready', function() {
+  let menubar = new MenuBar();
+  menubar.animatieIcon();
+  menubar.setMenuTemplates(constructMenuTemplates(0));
+
+  console.log('Searching for Sonos devices on network...\n');
+
+  let instance = new AirSonos({
+    timeout: 5,
+  });
+
+  instance.start().timeout(30000).then((tunnels) => {
+    tunnels.forEach((tunnel) => {
+      console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
     });
 
+    menubar.enableIcon();
+    menubar.setMenuTemplates(constructMenuTemplates(1));
 
-    function animate() {
-        var i = 0;
-        var j = 1;
-        animationInterval = setInterval(function() {
-            if (i < 0 || i > 12) {
-                j *= -1;
-                i += j;
-            }
-            tray.setImage(path.join(__dirname, `img/animations/logo${i}-iconTemplate.png`));
-            
-            i += j;
-        }, 80);
+    console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
+  }).catch(function() { 
+    menubar.disableIcon();
+    menubar.setMenuTemplates(constructMenuTemplates(-1));
+  }).done();
+});
+
+//option: Bool, wether or not to construct the option menubar
+//connected: 0 - connecting, 1 - connected, -1 - failed to connect
+function constructMenuTemplates(connected) {
+  var template = [airSonosMenu, automaticUpdatesMenu];
+  var optionTemplate = [airSonosMenu, automaticUpdatesMenu];
+
+  template.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
+  optionTemplate.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
+
+  optionTemplate.concat([separatorMenu, rebootMenu, forceQuitMenu]);
+  template.push(quitMenu);
+
+  return [template, optionTemplate];
+}
+
+if (config.get('automatic-updates')) {
+  request.get('https://raw.githubusercontent.com/mermaid/AirSonos.app/master/package.json').then(json => {
+    const p = JSON.parse(json);
+
+    if (cmp(p.version, app.getVersion()) > 0) {
+      if (!updateWindow) {
+        updateWindow = new BrowserWindow({
+            height: 220,
+            width: 420,
+            title: 'AirSonos',
+            resizable: false,
+            minimizable: false,
+            maximizable: false,
+        });
+
+        updateWindow.on('closed', () => {
+          updateWindow = null;
+        });
+
+        updateWindow.loadURL(`file://${__dirname }/app/update.html`);
+      } else {
+        updateWindow.show();
+      }
     }
 
-    function stopAnimation() {
-        if(animationInterval) {
-            clearInterval(animationInterval);
-            tray.setImage(path.join(__dirname, `img/animations/logo-dim-iconTemplate@2x.png`));
-        }            
-    }
-
-
-})();
+  }).catch().done();
+}

@@ -1,12 +1,17 @@
 {
   "name": "airsonos.app",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "A front end for AirSonos",
   "main": "index.js",
   "dependencies": {
-    "airsonos": "^0.2.6"
+    "airsonos": "^0.2.6",
+    "electron-config": "^0.2.1",
+    "request": "^2.79.0",
+    "request-promise": "^4.1.1",
+    "semver-compare": "^1.0.0"
   },
   "devDependencies": {
+    "electron-packager": "^8.4.0",
     "electron-prebuilt": "^1.4.13"
   },
   "scripts": {

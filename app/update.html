@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <link rel="stylesheet" type="text/css" href="mac.css">
+    <body>
+        <h2 id="air-sonos">AirSonos Update Available!</h2>
+        
+        <p>Go and dowload from <a href="https://github.com/mermaid/AirSonos.app">GitHub</a></p>
+        <p>
+            UI made with &#x2764; &nbsp;by <a href="https://github.com/mermaid">mermaid</a></br>
+            Thanks to <a href="https://github.com/stephen">stephen</a> for making the original <a href="https://github.com/stephen/airsonos">AirSonos</a>
+        </p>
+        <p><h5>P.S. I'm sorry there's no auto updater &#x1F633;</h5></p>
+        <script src="redirectLinks.js"></script>
+        <script>
+        const version = require('electron').remote.app.getVersion();
+
+        document.getElementById('version').innerHTML += version;
+        </script>
+    </body>
+</html>
