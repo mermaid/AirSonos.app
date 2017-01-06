@@ -11,6 +11,7 @@
     "semver-compare": "^1.0.0"
   },
   "devDependencies": {
+    "electron-installer-dmg": "^0.2.0",
     "electron-packager": "^8.4.0",
     "electron-prebuilt": "^1.4.13"
   },
