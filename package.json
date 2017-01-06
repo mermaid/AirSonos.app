@@ -1,6 +1,6 @@
 {
   "name": "airsonos.app",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "A front end for AirSonos",
   "main": "index.js",
   "dependencies": {
@@ -20,7 +20,7 @@
     "start": "electron .",
     "clean": "rm -rf ./dist",
     "build": "npm run clean && npm run build:osx && npm run package:dmg",
-    "build:osx": "electron-packager . AirSonos --out=dist --platform=darwin --arch=all --ignore=dist --ignore=README.md --ignore=.gitignore --icon=./img/airsonos-logo.icns",
+    "build:osx": "electron-packager . AirSonos --out=dist --platform=darwin --arch=all --ignore=dist --ignore=docs --ignore=README.md --ignore=.gitignore --icon=./img/airsonos-logo.icns",
     "package:dmg": "appdmg appdmg.json ./dist/AirSonos-darwin-x64/AirSonos.dmg",
     "postinstall": "npm rebuild --runtime=electron --target=1.4.13 --disturl=https://atom.io/download/atom-shell --build-from-sourcet && npm run fixappdmg",
     "fixappdmg": "cd ./node_modules/appdmg && rm -rf ./node_modules && npm install && cd ../.."
