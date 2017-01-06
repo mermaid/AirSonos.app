@@ -16,8 +16,8 @@ const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master
 
 let aboutWindow;
 let updateWindow;
-// var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
-// process.stdout.write = process.stderr.write = access.write.bind(access);
+var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
+process.stdout.write = process.stderr.write = access.write.bind(access);
 if (config.get('automatic-updates') === undefined) {
   config.set('automatic-updates', true);
 }

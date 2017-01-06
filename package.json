@@ -1,6 +1,6 @@
 {
   "name": "airsonos.app",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A front end for AirSonos",
   "main": "index.js",
   "dependencies": {
@@ -17,6 +17,8 @@
   "scripts": {
     "test": "test",
     "start": "electron .",
+    "clean": "rm -rf ./dist",
+    "build": "npm run clean && electron-packager . AirSonos --out=dist --platform=darwin --arch=all --ignore=dist --ignore=README.md --ignore=.gitignore --icon=./img/airsonos-logo.icns",
     "postinstall": "npm rebuild --runtime=electron --target=1.4.13 --disturl=https://atom.io/download/atom-shell --build-from-sourcet"
   },
   "repository": {
