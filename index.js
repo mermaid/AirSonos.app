@@ -12,15 +12,73 @@ const cmp = require('semver-compare');
 const Config = require('electron-config');
 const config = new Config();
 const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master/package.json';
+const helper = require('./node_modules/nodetunes/lib/helper');
+const crypto = require('crypto');
+
+helper.decryptAudioData = function(data, audioAesKey, audioAesIv, headerSize) {
+  var tmp = new Buffer(16);
+  if (!headerSize) headerSize = 12;
+
+  var remainder = (data.length - 12) % 16;
+  var endOfEncodedData = data.length - remainder;
+
+  var audioAesKeyBuffer = new Buffer(audioAesKey, 'binary');
+  var decipher = crypto.createDecipheriv('aes-128-cbc', audioAesKeyBuffer, audioAesIv);
+  decipher.setAutoPadding(false);
+
+  for (var i = headerSize, l = endOfEncodedData - 16; i <= l; i += 16) {
+    data.copy(tmp, 0, i, i + 16);
+    decipher.update(tmp).copy(data, i, 0, 16);
+  }
+
+  return data.slice(headerSize);
+};
 
 let aboutWindow;
 let updateWindow;
+let errorWindow;
 let menubar;
 let instance;
 let sonosTunnels;
 
-var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
+if (!fs.existsSync(path.join(app.getPath('appData'), 'AirSonos'))) {
+    fs.mkdirSync(path.join(app.getPath('appData'), 'AirSonos'));
+}
+
+var access = fs.createWriteStream(path.join(app.getPath('appData'), 'AirSonos/logs.log'));
 process.stdout.write = process.stderr.write = access.write.bind(access);
+
+let errorCount = 0;
+
+process.on('uncaughtException', function (e) {
+  errorCount++;
+  console.error(e);
+
+  if (errorCount > 10) {
+    if (!errorWindow) {
+
+        errorWindow = new BrowserWindow({
+            height: 230,
+            width: 450,
+            title: 'AirSonos',
+            center: true,
+            resizable: false,
+            minimizable: false,
+            maximizable: false,
+        });
+
+        errorWindow.on('closed', () => {
+          errorWindow = null
+          app.quit();
+        });
+
+        errorWindow.loadURL(`file://${__dirname }/app/errors.html`);
+      } else {
+        errorWindow.show();
+      }
+    }
+
+})
 
 if (config.get('automatic-updates') === undefined) {
   config.set('automatic-updates', true);
@@ -54,7 +112,6 @@ const airSonosMenu = {
 const quitMenu = {
     label: 'Quit',
     click: () => {
-      instance && instance.stop();
       app.quit();
     }
 };
@@ -124,24 +181,24 @@ function stopTunnel() {
 }
 
 function startTunnel() {
-    instance = new AirSonos({
-      timeout: 5,
+  instance = new AirSonos({
+    timeout: 5,
+  });
+
+  return instance.start().timeout(30000).then((tunnels) => {
+    sonosTunnels = tunnels;
+    tunnels.forEach((tunnel) => {
+      console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
     });
 
-    return instance.start().timeout(30000).then((tunnels) => {
-      sonosTunnels = tunnels;
-      tunnels.forEach((tunnel) => {
-        console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
-      });
+    menubar.enableIcon();
+    menubar.setMenuTemplates(constructMenuTemplates(1));
 
-      menubar.enableIcon();
-      menubar.setMenuTemplates(constructMenuTemplates(1));
-
-      console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
-    }).catch(function() { 
-      menubar.disableIcon();
-      menubar.setMenuTemplates(constructMenuTemplates(-1));
-    }).done();
+    console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
+  }).catch(function() { 
+    menubar.disableIcon();
+    menubar.setMenuTemplates(constructMenuTemplates(-1));
+  }).done();
 }
 
 //option: Bool, wether or not to construct the option menubar

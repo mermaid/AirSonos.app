@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <link rel="stylesheet" type="text/css" href="mac.css">
+    <body>
+        <h2 id="air-sonos">AirSonos &#x1F41E;</h2>
+        
+        <p>Unknown Errors have occurred: logs can be found at</p>
+        <p id="path"></p>
+        <p>And the developer can be found on <a href="https://github.com/mermaid/AirSonos.app">GitHub</a></p>
+        <p>Hopefully he can get you all sorted out
+        
+        <script src="redirectLinks.js"></script>
+        <script>
+        const path = require('electron').remote.require('path');
+        const logPath = path.join(require('electron').remote.app.getPath('appData'), 'AirSonos/');
+
+        document.getElementById('path').innerHTML = logPath;
+        </script>
+    </body>
+</html>
