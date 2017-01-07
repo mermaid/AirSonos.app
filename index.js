@@ -1,4 +1,3 @@
-
 'use strict';
 
 const {app, BrowserWindow} = require('electron');
@@ -14,10 +13,11 @@ const Config = require('electron-config');
 const config = new Config();
 const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master/package.json';
 
-
 let aboutWindow;
 let updateWindow;
 let menubar;
+let instance;
+let sonosTunnels;
 
 var access = fs.createWriteStream(path.join(app.getPath('appData'), 'access.log'));
 process.stdout.write = process.stderr.write = access.write.bind(access);
@@ -54,7 +54,8 @@ const airSonosMenu = {
 const quitMenu = {
     label: 'Quit',
     click: () => {
-        app.quit();
+      instance && instance.stop();
+      app.quit();
     }
 };
 const forceQuitMenu = {
@@ -74,7 +75,7 @@ const separatorMenu = {
     type: 'separator'
 };
 const connectedMenu = {
-    label: 'Connected',
+    label: 'Connected To:',
     enabled: false
 };
 const connectingMenu = {
@@ -85,6 +86,10 @@ const failedToConnectMenu = {
     label: 'Failed to Connect',
     enabled: false
 };
+const reconnectMenu = {
+    label: 'Reconnect',
+    click: () => stopTunnel().then(startTunnel)
+};
 const automaticUpdatesMenu = {
   label: 'Check for Updates',
   type: 'checkbox',
@@ -93,6 +98,10 @@ const automaticUpdatesMenu = {
   },
   checked: config.get('automatic-updates')
 }
+const sonosMenu = {
+  label: '<Sonos Name>',
+  enabled: false
+}
 
 
 app.on('ready', function() {
@@ -100,42 +109,70 @@ app.on('ready', function() {
   menubar.animatieIcon();
   menubar.setMenuTemplates(constructMenuTemplates(0));
 
+  startTunnel();
+
   console.log('Searching for Sonos devices on network...\n');
-
-  let instance = new AirSonos({
-    timeout: 5,
-  });
-
-  instance.start().timeout(30000).then((tunnels) => {
-    tunnels.forEach((tunnel) => {
-      console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
-    });
-
-    menubar.enableIcon();
-    menubar.setMenuTemplates(constructMenuTemplates(1));
-
-    console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
-  }).catch(function() { 
-    menubar.disableIcon();
-    menubar.setMenuTemplates(constructMenuTemplates(-1));
-  }).done();
 });
 
 app.on('window-all-closed', function() {
   //dont quit on windows close
 });
 
+function stopTunnel() {
+  sonosTunnels = null;
+  return instance && instance.stop();
+}
+
+function startTunnel() {
+    instance = new AirSonos({
+      timeout: 5,
+    });
+
+    return instance.start().timeout(30000).then((tunnels) => {
+      sonosTunnels = tunnels;
+      tunnels.forEach((tunnel) => {
+        console.log(`${ tunnel.deviceName } (@ ${ tunnel.device.host }:${ tunnel.device.port }, ${ tunnel.device.groupId })`);
+      });
+
+      menubar.enableIcon();
+      menubar.setMenuTemplates(constructMenuTemplates(1));
+
+      console.log(`\nSearch complete. Set up ${ tunnels.length } device tunnel${ tunnels.length === 1 ? '' : 's' }.`);
+    }).catch(function() { 
+      menubar.disableIcon();
+      menubar.setMenuTemplates(constructMenuTemplates(-1));
+    }).done();
+}
+
 //option: Bool, wether or not to construct the option menubar
 //connected: 0 - connecting, 1 - connected, -1 - failed to connect
 function constructMenuTemplates(connected) {
-  var template = [airSonosMenu, automaticUpdatesMenu];
-  var optionTemplate = [airSonosMenu, automaticUpdatesMenu];
+  var template = [airSonosMenu, automaticUpdatesMenu, separatorMenu];
+  var optionTemplate = [airSonosMenu, automaticUpdatesMenu, separatorMenu];
 
-  template.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
-  optionTemplate.push(!connected ? connectingMenu : (~connected ? failedToConnectMenu : connectedMenu));
+  template.push(!connected ? connectingMenu : (~connected ?  connectedMenu : failedToConnectMenu));
+  optionTemplate.push(!connected ? connectingMenu : (~connected ? connectedMenu : failedToConnectMenu));
+
+  if (!~connected) {
+    template.push(reconnectMenu);
+    optionTemplate.push(reconnectMenu);
+  }
+
+  if (sonosTunnels && sonosTunnels.length) {
+    sonosTunnels.forEach((tunnel) => {
+      var menu = Object.assign({}, sonosMenu);
+      var optionMenu = Object.assign({}, sonosMenu);
+
+      menu.label = tunnel.deviceName;
+      optionMenu.label = `${ tunnel.deviceName } @ ${ tunnel.device.host }:${ tunnel.device.port }`;
+
+      template.push(menu);
+      optionTemplate.push(optionMenu);
+    });
+  }
 
   optionTemplate = optionTemplate.concat([separatorMenu, rebootMenu, forceQuitMenu]);
-  template.push(quitMenu);
+  template = template.concat([separatorMenu, quitMenu]);
 
   return [template, optionTemplate];
 }
