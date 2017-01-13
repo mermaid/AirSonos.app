@@ -1,6 +1,6 @@
 'use strict';
 
-const {app, BrowserWindow} = require('electron');
+const {app, BrowserWindow, shell} = require('electron');
 app.dock.hide();
 
 const AirSonos = require('airsonos');
@@ -15,6 +15,7 @@ const updateURL = 'https://raw.githubusercontent.com/mermaid/AirSonos.app/master
 const helper = require('./node_modules/nodetunes/lib/helper');
 const crypto = require('crypto');
 
+//Fixes a bug in nodetunes that is not released to the public yet
 helper.decryptAudioData = function(data, audioAesKey, audioAesIv, headerSize) {
   var tmp = new Buffer(16);
   if (!headerSize) headerSize = 12;
@@ -45,7 +46,8 @@ if (!fs.existsSync(path.join(app.getPath('appData'), 'AirSonos'))) {
     fs.mkdirSync(path.join(app.getPath('appData'), 'AirSonos'));
 }
 
-var access = fs.createWriteStream(path.join(app.getPath('appData'), 'AirSonos/logs.log'));
+const logPath = path.join(app.getPath('appData'), 'AirSonos/logs.log');
+const access = fs.createWriteStream(logPath);
 process.stdout.write = process.stderr.write = access.write.bind(access);
 
 let errorCount = 0;
@@ -160,6 +162,23 @@ const sonosMenu = {
   enabled: false
 }
 
+const diagnosticsMenu = {
+  label: 'Colled Debug Logs',
+  click: () => {
+    if(require('airsonos/lib/diagnostics')) {
+      console.log();
+      require('airsonos/lib/diagnostics')();
+    }
+  }
+}
+
+const openLogMenu = {
+  label: 'Show Log File',
+  click: () => {
+    shell.showItemInFolder(logPath);
+  }
+}
+
 
 app.on('ready', function() {
   menubar = new MenuBar();
@@ -182,6 +201,7 @@ function stopTunnel() {
 
 function startTunnel() {
   instance = new AirSonos({
+    verbose: true,
     timeout: 5,
   });
 
@@ -228,7 +248,7 @@ function constructMenuTemplates(connected) {
     });
   }
 
-  optionTemplate = optionTemplate.concat([separatorMenu, rebootMenu, forceQuitMenu]);
+  optionTemplate = optionTemplate.concat([separatorMenu, diagnosticsMenu, openLogMenu, rebootMenu, forceQuitMenu]);
   template = template.concat([separatorMenu, quitMenu]);
 
   return [template, optionTemplate];
