@@ -21,7 +21,7 @@ A front end application for [AirSonos](https://github.com/stephen/airsonos)
 
  you can get debug logs by option+click and selcting "Collect Debug Logs"
 
- # Deveopment
+# Deveopment
  - clone the repo
  - run `npm install`
  - run `npm start`
