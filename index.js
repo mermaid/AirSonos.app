@@ -1,7 +1,10 @@
 'use strict';
 
 const {app, BrowserWindow, shell} = require('electron');
-app.dock.hide();
+
+if (app.dock) {
+   app.dock.hide();
+}
 
 const AirSonos = require('airsonos');
 const MenuBar = require('./menubar');

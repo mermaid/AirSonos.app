@@ -4,7 +4,7 @@ A front end application for [AirSonos](https://github.com/stephen/airsonos)
 # Download
 [Click here to dowload the latest release of AirSonos.app](https://github.com/mermaid/AirSonos.app/releases/)
 
-# Screenshots (out of date, they have more cool features now!)
+# Screenshots
 | click | option + click |
 |-------|----------------|
 | ![click](docs/click.png)| ![option + click](docs/optionClick.png)|
@@ -20,5 +20,14 @@ A front end application for [AirSonos](https://github.com/stephen/airsonos)
 
 
  you can get debug logs by option+click and selcting "Collect Debug Logs"
+
+ # Deveopment
+ - clone the repo
+ - run `npm install`
+ - run `npm start`
+ - to build the release version (for mac)
+   - run `npm run build`
+   - you may need to remove `--osx-sign` from `build:osx` in `package.json` as it will attempt to sign the resulting app with you apple developer certificate
+ - the windows version can be built using `npm run build:win` (I havent yet built/tested it, so it may not work)
 
 
